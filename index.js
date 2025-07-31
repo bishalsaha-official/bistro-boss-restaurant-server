@@ -65,7 +65,7 @@ async function run() {
         // jwt related api-------------------------------------------------------------------
         app.post('/jwt', async (req, res) => {
             const user = req.body
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2h' })
             res.send({ token })
         })
 
@@ -89,7 +89,7 @@ async function run() {
         })
 
         // delete specific user
-        app.delete('/users/:id', async (req, res) => {
+        app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await userCollection.deleteOne(query)
@@ -97,7 +97,7 @@ async function run() {
         })
 
         // Make Admin api-------------------------------------------------------------------------
-        app.patch('/users/admin/:id', async (req, res) => {
+        app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
             const updateDoc = {
@@ -128,6 +128,12 @@ async function run() {
         // get menu data
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
+            const item = req.body
+            const result = await menuCollection.insertOne(item)
             res.send(result)
         })
 

@@ -239,6 +239,33 @@ async function run() {
         })
 
 
+        // admin stats
+        app.get('/admin-stats', async (req, res) => {
+            const users = await userCollection.estimatedDocumentCount()
+            const menuItems = await menuCollection.estimatedDocumentCount()
+            const orders = await paymentCollection.estimatedDocumentCount()
+
+            // Not the best way------------------------------------------------------
+            // const revenue = await paymentCollection.find().toArray()
+            // const result = revenue.reduce((total, item)=> total+ item.price,0)
+            // ------------------------------------------------------------------------
+
+            // This is the best way
+            const result = await paymentCollection.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: { $sum: "$price" }
+                    }
+                }
+            ]).toArray()
+
+            const revenue = result.length > 0 ? result[0].totalRevenue : 0;
+
+            res.send({ users, menuItems, orders, revenue })
+        })
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
